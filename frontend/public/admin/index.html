@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Bautagesberichte – Administration</title>
+    <script>
+        // Site-Stylesheet (Schrift, Icons) so früh wie möglich laden, wenn chayns die siteId mitgibt.
+        // Fallback ohne Parameter: Shell.tsx über chayns-api (useSite().id).
+        (function () {
+            var p = new URLSearchParams(window.location.search.toLowerCase());
+            var siteId = p.get('stylesiteid') || p.get('siteid');
+            if (!siteId) return;
+            var url = new URL('https://style.tobit.cloud/css/v5.0');
+            url.searchParams.set('siteId', siteId);
+            if (p.get('colormode')) url.searchParams.set('colormode', p.get('colormode'));
+            if (p.get('color')) url.searchParams.set('color', p.get('color'));
+            document.documentElement.classList.add('chayns-css-loading');
+            var link = document.createElement('link');
+            link.id = 'chayns-site-css';
+            link.rel = 'stylesheet';
+            link.href = url.toString();
+            var done = function () {
+                link.dataset.loaded = 'true';
+                document.documentElement.classList.remove('chayns-css-loading');
+            };
+            link.onload = done;
+            link.onerror = done;
+            setTimeout(done, 4000);
+            document.head.appendChild(link);
+        })();
+    </script>
+    <link rel="stylesheet" href="../admin.css" />
+</head>
+<body>
+    <div id="root"></div>
+    <script src="../admin.js"></script>
+</body>
+</html>

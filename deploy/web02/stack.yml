@@ -1,0 +1,50 @@
+# Portainer-Stack "lansing-bautagesbericht" auf web02.
+# Voraussetzung (besteht auf web02): Netz reverse-proxy_default mit nginx-proxy + ACME-Companion.
+# Uploads laufen in 512-KB-Stücken, daher genügt das Standard-Limit von nginx-proxy (1 MB).
+# Image: registry.qonect.de/lansing-bautagesbericht
+
+services:
+  lansing-bautagesbericht:
+    image: registry.qonect.de/lansing-bautagesbericht:latest
+    container_name: lansing-bautagesbericht
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      BRIDGE_URL: ${BRIDGE_URL}
+      BRIDGE_SECRET: ${BRIDGE_SECRET}
+      UAC_GROUP_TEAM: ${UAC_GROUP_TEAM:-79077}
+      UAC_GROUP_ADMIN: ${UAC_GROUP_ADMIN:-223675}
+      # E-Mail-Kopie an den Auftraggeber (SMTP_PASS nur als Stack-Variable in Portainer!)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-LANSING Metallbau – Bautagesbericht}
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
+      MAIL_BCC: ${MAIL_BCC:-}
+      TRUST_PROXY: "true"
+      VIRTUAL_HOST: ${FRONTEND_HOST:-lansing-bautagesbericht.web02.qonect.de}
+      VIRTUAL_PORT: "8080"
+      LETSENCRYPT_HOST: ${FRONTEND_HOST:-lansing-bautagesbericht.web02.qonect.de}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-info@qonect.de}
+    volumes:
+      # SQLite-Datei und alle PDFs/Fotos - gehört in die Sicherung von web02.
+      - bericht-data:/data
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+volumes:
+  bericht-data:
+
+networks:
+  proxy:
+    external: true
+    name: reverse-proxy_default

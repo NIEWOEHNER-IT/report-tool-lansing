@@ -1,0 +1,27 @@
+# Lokaler Start:
+#   copy .env.example .env   (BRIDGE_URL/BRIDGE_SECRET eintragen oder DEV_LOGIN für reine Tests)
+#   docker compose up --build
+# Formular: http://localhost:8092/   Admin: http://localhost:8092/admin/
+# Ohne chayns (nur localhost): http://localhost:8092/?mock=1 bzw. /admin/?mock=1&role=admin (braucht DEV_LOGIN=true)
+services:
+  bautagesbericht:
+    build: .
+    image: registry.qonect.de/lansing-bautagesbericht:latest
+    container_name: lansing-bautagesbericht
+    ports:
+      - "8092:8080"
+    environment:
+      BRIDGE_URL: ${BRIDGE_URL:-}
+      BRIDGE_SECRET: ${BRIDGE_SECRET:-}
+      UAC_GROUP_TEAM: ${UAC_GROUP_TEAM:-79077}
+      UAC_GROUP_ADMIN: ${UAC_GROUP_ADMIN:-223675}
+      # DEV_LOGIN greift nur, wenn NODE_ENV nicht "production" ist (im Image gesetzt) - hier daher überschrieben.
+      NODE_ENV: ${NODE_ENV:-production}
+      DEV_LOGIN: ${DEV_LOGIN:-false}
+      TRUST_PROXY: "false"
+    volumes:
+      - bericht-data:/data
+    restart: unless-stopped
+
+volumes:
+  bericht-data:

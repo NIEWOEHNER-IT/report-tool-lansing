@@ -1,0 +1,41 @@
+{
+  "name": "lansing-bautagesbericht",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bautagesbericht für Lansing Metallbau: chayns-Formular, Admin-Bereich und Container-Backend (Node 22, SQLite, Dateien im Volume)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:frontend": "node scripts/build.mjs --frontend",
+    "build:bridge": "node scripts/build.mjs --bridge",
+    "build:server": "node scripts/build.mjs --server",
+    "watch": "node scripts/build.mjs --watch",
+    "bridge:bundle": "node scripts/make-bridge.mjs",
+    "dev": "node --disable-warning=ExperimentalWarning --import tsx server/src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --disable-warning=ExperimentalWarning --test --import tsx \"tests/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "@chayns-components/core": "5.5.59",
+    "@chayns-components/date": "5.5.59",
+    "@module-federation/enhanced": "^2.9.0",
+    "@types/node": "^22.0.0",
+    "@types/nodemailer": "^6.4.24",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "chayns-api": "3.6.1",
+    "esbuild": "^0.28.2",
+    "motion": "^13.3.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "styled-components": "^6.5.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "nodemailer": "^6.10.1"
+  }
+}
