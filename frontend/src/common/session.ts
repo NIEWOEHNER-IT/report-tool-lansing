@@ -6,7 +6,18 @@
  *  4. Mock-Modus (nur localhost): POST /api/auth/dev
  */
 import type { BootstrapResponse, BridgeAssertion, ChallengeResponse, MeResponse, Role, SessionResponse } from '../../../shared/contract';
-import { ApiClientError, authRequest, callBridge, clearSession, getSession, isAuthError, publicRequest, resolveAccessToken, storeSession } from './api';
+import {
+    ApiClientError,
+    apiUrl,
+    authRequest,
+    callBridge,
+    clearSession,
+    getSession,
+    isAuthError,
+    publicRequest,
+    resolveAccessToken,
+    storeSession,
+} from './api';
 import { getMockRole, isMockMode } from './mockMode';
 
 export interface Identity {
@@ -26,12 +37,17 @@ function identityOf(session: SessionResponse | MeResponse): Identity {
 }
 
 /**
- * `requiredRole`: Reicht die gemerkte Sitzung dafür nicht (z. B. Rolle vergeben, bevor die Person
- * in die Admin-Gruppe kam), wird sie verworfen und die Gruppen werden über die Bridge frisch geprüft.
+ * In chayns wird bei JEDEM Öffnen der Seite frisch über die Bridge geprüft, wer angemeldet ist und
+ * in welchen UAC-Gruppen die Person ist. Eine im Gerät gemerkte Sitzung wird nicht übernommen:
+ * sonst könnte nach einem chayns-Logout auf einem geteilten iPad die nächste Person sie weiter
+ * nutzen, und wer aus der Gruppe Team entfernt wurde, hätte bis zum Ablauf noch Zugriff.
+ * Nur im lokalen Mock-Modus (ohne Bridge) wird eine gemerkte Test-Sitzung weiterverwendet.
  */
 export async function login(requiredRole: Role = 'employee'): Promise<LoginOutcome> {
     const bootstrap = await publicRequest<BootstrapResponse>('GET', '/api/bootstrap');
-    if (getSession()) {
+    if (!isMockMode()) {
+        await endStoredSession();
+    } else if (getSession()) {
         try {
             const me = await authRequest<MeResponse>('GET', '/api/auth/me');
             const roleOk = requiredRole !== 'admin' || me.role === 'admin';
@@ -60,8 +76,21 @@ export async function login(requiredRole: Role = 'employee'): Promise<LoginOutco
         storeSession(session);
         return { kind: 'ok', bootstrap, identity: identityOf(session) };
     } catch (err) {
+        clearSession();
         if (err instanceof ApiClientError && err.code === 'FORBIDDEN') return { kind: 'forbidden', bootstrap, message: err.message };
         if (isAuthError(err)) return { kind: 'not-logged-in', bootstrap };
         throw err;
+    }
+}
+
+/** Gemerkte Sitzung beim Server beenden und im Gerät löschen (Fehler egal). */
+async function endStoredSession(): Promise<void> {
+    const stored = getSession();
+    clearSession();
+    if (!stored) return;
+    try {
+        await fetch(apiUrl('/api/auth/logout'), { method: 'POST', headers: { Authorization: `Bearer ${stored.token}` } });
+    } catch {
+        // Sitzung läuft serverseitig ohnehin ab.
     }
 }
